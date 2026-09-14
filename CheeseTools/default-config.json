@@ -71,7 +71,7 @@
     "Ultimate Feldsparring Ship Speed": 1100,
     "Bramble Timer": false,
     "Ultimate Feldsparring Timer": false,
-    
+
     "       ": { "type": "separator" },
     "Vessel Practice State": "P+Digit6",
     "Warp Timer": false,
@@ -88,7 +88,7 @@
     "Clone Practice State": "P+Digit8",
     "Clone Timer": false,
     "Clone Trees Locator": false,
-    
+
     "          ": { "type": "separator" },
     "Instrument Hunt Practice State": "P+Digit9",
     "Cloneboosting Setup": false,
@@ -127,13 +127,14 @@
         "The Interloper",
         "Sun Station",
         "Quantum Moon",
-        "White Hole"
+        "White Hole",
+        "The Stranger"
       ]
     },
     "Custom Practice State 1 Position": "0.0, 0.0, 0.0",
     "Custom Practice State 1 Rotation": "0.0, 0.0, 0.0",
     "Custom Practice State 1 Loop Time": 0,
-    "Custom Practice State 1 Spacesuit": false,
+    "Custom Practice State 1 Spacesuit": true,
     "Custom Practice State 1 Ship": false,
 
     "             ": { "type": "separator" },
@@ -163,13 +164,14 @@
         "The Interloper",
         "Sun Station",
         "Quantum Moon",
-        "White Hole"
+        "White Hole",
+        "The Stranger"
       ]
     },
     "Custom Practice State 2 Position": "0.0, 0.0, 0.0",
     "Custom Practice State 2 Rotation": "0.0, 0.0, 0.0",
     "Custom Practice State 2 Loop Time": 0,
-    "Custom Practice State 2 Spacesuit": false,
+    "Custom Practice State 2 Spacesuit": true,
     "Custom Practice State 2 Ship": false,
 
     "              ": { "type": "separator" },
@@ -199,13 +201,14 @@
         "The Interloper",
         "Sun Station",
         "Quantum Moon",
-        "White Hole"
+        "White Hole",
+        "The Stranger"
       ]
     },
     "Custom Practice State 3 Position": "0.0, 0.0, 0.0",
     "Custom Practice State 3 Rotation": "0.0, 0.0, 0.0",
     "Custom Practice State 3 Loop Time": 0,
-    "Custom Practice State 3 Spacesuit": false,
+    "Custom Practice State 3 Spacesuit": true,
     "Custom Practice State 3 Ship": false,
 
     "               ": { "type": "separator" },
@@ -235,13 +238,14 @@
         "The Interloper",
         "Sun Station",
         "Quantum Moon",
-        "White Hole"
+        "White Hole",
+        "The Stranger"
       ]
     },
     "Custom Practice State 4 Position": "0.0, 0.0, 0.0",
     "Custom Practice State 4 Rotation": "0.0, 0.0, 0.0",
     "Custom Practice State 4 Loop Time": 0,
-    "Custom Practice State 4 Spacesuit": false,
+    "Custom Practice State 4 Spacesuit": true,
     "Custom Practice State 4 Ship": false,
 
     "                ": { "type": "separator" },
@@ -271,13 +275,14 @@
         "The Interloper",
         "Sun Station",
         "Quantum Moon",
-        "White Hole"
+        "White Hole",
+        "The Stranger"
       ]
     },
     "Custom Practice State 5 Position": "0.0, 0.0, 0.0",
     "Custom Practice State 5 Rotation": "0.0, 0.0, 0.0",
     "Custom Practice State 5 Loop Time": 0,
-    "Custom Practice State 5 Spacesuit": false,
+    "Custom Practice State 5 Spacesuit": true,
     "Custom Practice State 5 Ship": false,
 
     "                 ": { "type": "separator" },
@@ -307,13 +312,14 @@
         "The Interloper",
         "Sun Station",
         "Quantum Moon",
-        "White Hole"
+        "White Hole",
+        "The Stranger"
       ]
     },
     "Custom Practice State 6 Position": "0.0, 0.0, 0.0",
     "Custom Practice State 6 Rotation": "0.0, 0.0, 0.0",
     "Custom Practice State 6 Loop Time": 0,
-    "Custom Practice State 6 Spacesuit": false,
+    "Custom Practice State 6 Spacesuit": true,
     "Custom Practice State 6 Ship": false,
 
     "                  ": { "type": "separator" },
@@ -343,13 +349,14 @@
         "The Interloper",
         "Sun Station",
         "Quantum Moon",
-        "White Hole"
+        "White Hole",
+        "The Stranger"
       ]
     },
     "Custom Practice State 7 Position": "0.0, 0.0, 0.0",
     "Custom Practice State 7 Rotation": "0.0, 0.0, 0.0",
     "Custom Practice State 7 Loop Time": 0,
-    "Custom Practice State 7 Spacesuit": false,
+    "Custom Practice State 7 Spacesuit": true,
     "Custom Practice State 7 Ship": false,
 
     "                   ": { "type": "separator" },
@@ -379,13 +386,14 @@
         "The Interloper",
         "Sun Station",
         "Quantum Moon",
-        "White Hole"
+        "White Hole",
+        "The Stranger"
       ]
     },
     "Custom Practice State 8 Position": "0.0, 0.0, 0.0",
     "Custom Practice State 8 Rotation": "0.0, 0.0, 0.0",
     "Custom Practice State 8 Loop Time": 0,
-    "Custom Practice State 8 Spacesuit": false,
+    "Custom Practice State 8 Spacesuit": true,
     "Custom Practice State 8 Ship": false,
 
     "                    ": { "type": "separator" },
@@ -415,13 +423,14 @@
         "The Interloper",
         "Sun Station",
         "Quantum Moon",
-        "White Hole"
+        "White Hole",
+        "The Stranger"
       ]
     },
     "Custom Practice State 9 Position": "0.0, 0.0, 0.0",
     "Custom Practice State 9 Rotation": "0.0, 0.0, 0.0",
     "Custom Practice State 9 Loop Time": 0,
-    "Custom Practice State 9 Spacesuit": false,
+    "Custom Practice State 9 Spacesuit": true,
     "Custom Practice State 9 Ship": false,
 
     "                     ": { "type": "separator" },
@@ -451,13 +460,14 @@
         "The Interloper",
         "Sun Station",
         "Quantum Moon",
-        "White Hole"
+        "White Hole",
+        "The Stranger"
       ]
     },
     "Custom Practice State 10 Position": "0.0, 0.0, 0.0",
     "Custom Practice State 10 Rotation": "0.0, 0.0, 0.0",
     "Custom Practice State 10 Loop Time": 0,
-    "Custom Practice State 10 Spacesuit": false,
+    "Custom Practice State 10 Spacesuit": true,
     "Custom Practice State 10 Ship": false
   }
 }
