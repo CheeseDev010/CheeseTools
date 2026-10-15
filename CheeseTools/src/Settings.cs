@@ -2,8 +2,8 @@
 using System.IO;
 using System.Reflection;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using OWML.Common;
+using OWML.Utils;
 
 namespace CheeseTools.src {
 	public static class Settings {
@@ -19,7 +19,6 @@ namespace CheeseTools.src {
 			public bool noAltTabPause = false;
 			public bool markStranger = false;
 			public bool learnQuantumFrequency = false;
-			public bool suitlessPracticeStates = false;
 			public bool originalQuitMenuButtonPosition = false;
 			public bool showSectors = false;
 		}
@@ -28,17 +27,13 @@ namespace CheeseTools.src {
 
 		private const string FileName = "cheesetools-settings.json";
 		private const float AutosaveInterval = 60f;
-		private const float UiScale = 1.5f;
 
-		private static string[] tabNames = {"General", "Keybinds", "Practice States", "Custom Practice States"};
+		private static ScreenPrompt watermark = new ScreenPrompt($"CheeseTools v{CheeseTools.Version}: Enabled");
+		private static ScreenPrompt loopTimeText = new ScreenPrompt("");
 
 		private static string path;
-		private static float screenWidth;
-		private static float screenHeight;
-		private static bool showWindow;
 		private static float lastAutosaveTime;
 		private static string lastJson;
-		private static int selectedTab;
 
 		public static void Start() {
 			string dirPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
@@ -51,17 +46,68 @@ namespace CheeseTools.src {
 		}
 
 		public static void Update() {
-			if (Keyboard.current[Key.Backquote].wasPressedThisFrame) {
-				showWindow = !showWindow;
-			}
-
 			if (Time.unscaledTime - lastAutosaveTime > AutosaveInterval) {
 				lastAutosaveTime = Time.unscaledTime;
 				Save();
 			}
+
+			UpdateWatermark();
+
+			if (Locator.GetPlayerBody() == null) return;
+
+			UpdateInfiniteResources();
+			UpdateLoopTimeText();
+
+			if (EntitlementsManager.IsDlcOwned() != EntitlementsManager.AsyncOwnershipStatus.Owned) return;
+
+			UpdateStrangerMarker();
 		}
 
-		public static void Load() {
+		public static void OnCompleteSceneLoad(OWScene previousScene, OWScene newScene) {
+			if (newScene == OWScene.SolarSystem) {
+				Locator.GetPlayerSectorDetector().OnEnterSector += OnEnterSector;
+				Locator.GetPlayerSectorDetector().OnExitSector += OnExitSector;
+
+				if (data.learnQuantumFrequency) {
+					PlayerData.LearnFrequency(SignalFrequency.Quantum);
+				}
+			}
+			if (newScene == OWScene.TitleScreen) {
+				if (data.createLaunchCodesSave && (previousScene == OWScene.SolarSystem || previousScene == OWScene.EyeOfTheUniverse)) {
+					PlayerData.ResetGame();
+					PlayerData.LearnLaunchCodes();
+					PlayerData.SaveLoopCount(3);
+				}
+			}
+
+			if (Locator.GetPlayerBody() == null) return;
+			UpdateInvincibility();
+		}
+
+		public static void OnSettingsChanged() {
+			Application.runInBackground = data.noAltTabPause;
+
+			if (data.learnQuantumFrequency) {
+				PlayerData.LearnFrequency(SignalFrequency.Quantum);
+			}
+
+			UpdateInvincibility();
+			UpdateSectorText();
+		}
+
+		public static void OnEnterSector(Sector sector) {
+			if (data.showSectors) {
+				ModUtils.AddScreenText(sector.gameObject.name, PromptPosition.BottomCenter);
+			}
+		}
+
+		public static void OnExitSector(Sector sector) {
+			if (data.showSectors) {
+				ModUtils.RemoveScreenText(sector.gameObject.name, PromptPosition.BottomCenter);
+			}
+		}
+
+		private static void Load() {
 			Data loaded = null;
 			try {
 				if (File.Exists(path)) {
@@ -82,67 +128,84 @@ namespace CheeseTools.src {
 			data = loaded ?? new Data();
 		}
 
-		public static void Save() {
+		private static void Save() {
 			string json = JsonUtility.ToJson(data, true);
 			if (json == lastJson) return;
-
 			File.WriteAllText(path, json);
 			lastJson = json;
-			CheeseTools.Console.WriteLine("Saved to file: " + Time.unscaledTime);
+			CheeseTools.Console.WriteLine($"[{Time.unscaledTime}] Saved to file", MessageType.Success);
 		}
 
-		public static void OnGUI() {
-			if (!showWindow) return;
-			GUI.matrix = Matrix4x4.Scale(new Vector3(UiScale, UiScale, 1f));
-			screenWidth = Screen.width / UiScale;
-			screenHeight = Screen.height / UiScale;
-			float windowWidth = screenWidth / 1.5f;
-			float windowHeight = screenHeight / 1.5f;
-			GUILayout.Window(0, new Rect(screenWidth / 2 - windowWidth / 2, screenHeight / 2 - windowHeight / 2, windowWidth, windowHeight), DrawWindow, "CheeseTools Settings");
-		}
-
-		private static void DrawWindow(int windowId) {
-			selectedTab = GUILayout.Toolbar(selectedTab, tabNames);
-			switch(selectedTab) {
-				case 0:
-					GeneralTab();
-					break;
-				case 1:
-					KeybindsTab();
-					break;
-				case 2:
-					PracticeStatesTab();
-					break;
-				case 3:
-					CustomPracticeStatesTab();
-					break;
+		private static void UpdateWatermark() {
+			if (data.watermark) {
+				if (Locator.GetPromptManager()?.GetScreenPromptList(PromptPosition.LowerLeft)?.Contains(watermark) == false) {
+					Locator.GetPromptManager().AddScreenPrompt(watermark, true);
+				}
+			} else {
+				if (Locator.GetPromptManager()?.GetScreenPromptList(PromptPosition.LowerLeft)?.Contains(watermark) == true) {
+					Locator.GetPromptManager().RemoveScreenPrompt(watermark, PromptPosition.LowerLeft);
+				}
 			}
 		}
 
-		private static void GeneralTab() {
-			data.watermark = GUILayout.Toggle(data.watermark, "Watermark");
-			data.infiniteFuel = GUILayout.Toggle(data.infiniteFuel, "Infinite Fuel");
-			data.infiniteOxygen = GUILayout.Toggle(data.infiniteOxygen, "Infinite Oxygen");
-			data.playerInvincibility = GUILayout.Toggle(data.playerInvincibility, "Player Invincibility");
-			data.shipInvincibility = GUILayout.Toggle(data.shipInvincibility, "Ship Invincibility");
-			data.showLoopTime = GUILayout.Toggle(data.showLoopTime, "Show Loop Time");
-			data.freezeSupernova = GUILayout.Toggle(data.freezeSupernova, "Freeze Supernova");
-			data.createLaunchCodesSave = GUILayout.Toggle(data.createLaunchCodesSave, "Create Launch Codes Save !RESETS SAVEFILE!");
-			data.noAltTabPause = GUILayout.Toggle(data.noAltTabPause, "No Alt Tab Pause");
-			data.markStranger = GUILayout.Toggle(data.markStranger, "Mark Stranger");
-			data.learnQuantumFrequency = GUILayout.Toggle(data.learnQuantumFrequency, "Learn Quantum Frequency");
-			data.suitlessPracticeStates = GUILayout.Toggle(data.suitlessPracticeStates, "Suitless Practice States");
-			data.originalQuitMenuButtonPosition = GUILayout.Toggle(data.originalQuitMenuButtonPosition, "Original Quit Menu Button Position");
-			data.showSectors = GUILayout.Toggle(data.showSectors, "Show Sectors");
+		private static void UpdateInfiniteResources() {
+			if (Locator.GetPlayerTransform()?.TryGetComponent(out PlayerResources resources) == true) {
+				if (data.infiniteFuel)
+					resources.SetValue("_currentFuel", resources.GetValue<float>("_maxFuel"));
+				if (data.infiniteOxygen)
+					resources.SetValue("_currentOxygen", resources.GetValue<float>("_maxOxygen"));
+			}
 		}
 
-		private static void KeybindsTab() {
+		private static void UpdateInvincibility() {
+			ShipDamageController damageController = Locator.GetShipTransform()?.GetComponent<ShipDamageController>();
+			if (damageController) {
+				damageController._invincible = data.shipInvincibility;
+				if (data.shipInvincibility) ModUtils.RepairShip();
+			}
+
+			PlayerResources resources = Locator.GetPlayerTransform()?.GetComponent<PlayerResources>();
+			resources._invincible = data.playerInvincibility;
+			if (data.playerInvincibility) {
+				resources._currentHealth = PlayerResources._maxHealth;
+				resources.PatchAllPunctures();
+			}
 		}
 
-		private static void PracticeStatesTab() {
+		private static void UpdateLoopTimeText() {
+			if (data.showLoopTime && TimeLoop.GetSecondsElapsed() > 0f) {
+				loopTimeText.SetText($"Loop Time: {TimeSpan.FromSeconds(TimeLoop.GetSecondsElapsed()).ToString(@"mm\:ss")} [{(int)TimeLoop.GetSecondsElapsed()}]");
+				if (!Locator.GetPromptManager().GetScreenPromptList(PromptPosition.LowerLeft).Contains(loopTimeText)) {
+					Locator.GetPromptManager().AddScreenPrompt(loopTimeText, PromptPosition.LowerLeft, true);
+				}
+			}
+			else {
+				Locator.GetPromptManager().RemoveScreenPrompt(loopTimeText);
+			}
 		}
 
-		private static void CustomPracticeStatesTab() {
+		private static void UpdateSectorText() {
+			if (data.showSectors) {
+				foreach (Sector sector in Locator.GetPlayerSectorDetector()._sectorList) {
+					ModUtils.AddScreenText(sector.gameObject.name, PromptPosition.BottomCenter);
+				}
+			}
+			else {
+				foreach (Sector sector in Locator.GetPlayerSectorDetector()._sectorList) {
+					ModUtils.RemoveScreenText(sector.gameObject.name, PromptPosition.BottomCenter);
+				}
+			}
+		}
+		
+		private static void UpdateStrangerMarker() {
+			var stranger = Locator.GetAstroObject(AstroObject.Name.RingWorld)?.GetOWRigidbody();
+			if (stranger == null) return;
+
+			var strangerMarker = ModUtils.SetMarker("THE STRANGER", stranger);
+			bool visible = data.markStranger && !Locator.GetDreamWorldController()._insideDream && strangerMarker.GetMarkerDistance() > 1000;
+			if (strangerMarker.IsVisible() != visible) {
+				strangerMarker.SetVisibility(visible);
+			}
 		}
 	}
 }
