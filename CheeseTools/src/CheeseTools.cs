@@ -19,7 +19,7 @@ namespace CheeseTools.src {
 			LoadManager.OnCompleteSceneLoad += (prev, next) => ModHelper.Events.Unity.FireOnNextUpdate(() => OnCompleteSceneLoad(prev, next));
 
 			Settings.Start();
-			Console.WriteLine($"{nameof(CheeseTools)} v{Version} enabled", MessageType.Success);
+			Console.WriteLine($"CheeseTools v{Version} enabled!", MessageType.Success);
 		}
 
 		public void OnCompleteSceneLoad(OWScene previousScene, OWScene newScene) {
@@ -28,11 +28,11 @@ namespace CheeseTools.src {
 
 		public void Update() {
 			Settings.Update();
-			SettingsUi.Update();
+			SettingsUI.Update();
 		}
 
 		public void OnGUI() {
-			SettingsUi.OnGUI();
+			SettingsUI.OnGUI();
 		}
 
 		public void OnApplicationQuit() {

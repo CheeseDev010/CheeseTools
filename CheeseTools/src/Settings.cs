@@ -91,6 +91,8 @@ namespace CheeseTools.src {
 				PlayerData.LearnFrequency(SignalFrequency.Quantum);
 			}
 
+			if (Locator.GetPlayerBody() == null) return;
+
 			UpdateInvincibility();
 			UpdateSectorText();
 		}

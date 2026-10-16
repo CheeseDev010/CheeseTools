@@ -2,32 +2,52 @@
 using UnityEngine.InputSystem;
 
 namespace CheeseTools.src {
-	public static class SettingsUi {
+	public static class SettingsUI {
+		public static bool showWindow;
+		public static bool mouseOverWindow;
+
 		private const float UiScale = 1.5f;
 
 		private static string[] tabNames = {"General", "Keybinds", "Practice States", "Custom Practice States"};
 
-		private static bool showWindow;
+		private static Rect windowRect;
 		private static int selectedTab;
+		private static bool wasPaused;
 
 		public static void Update() {
 			if (Keyboard.current[Key.Backquote].wasPressedThisFrame) {
 				showWindow = !showWindow;
+				Locator.GetMenuAudioController().PlayChangeTab();
+				if (showWindow) {
+					OWInput.ChangeInputMode(InputMode.None);
+					wasPaused = OWTime.IsPaused();
+					OWTime.Pause(OWTime.PauseType.Menu);
+				} 
+				else {
+					OWInput.RestorePreviousInputs();
+					if (!wasPaused) {
+						OWTime.Unpause(OWTime.PauseType.Menu);
+					}
+				}
 			}
 		}
 
 		public static void OnGUI() {
 			if (!showWindow) return;
+			Cursor.lockState = CursorLockMode.None;
+			Cursor.visible = true;
+
 			GUI.matrix = Matrix4x4.Scale(new Vector3(UiScale, UiScale, 1f));
 			float screenWidth = Screen.width / UiScale;
 			float screenHeight = Screen.height / UiScale;
 			float windowWidth = screenWidth / 1.5f;
 			float windowHeight = screenHeight / 1.5f;
-			GUILayout.Window(0, new Rect(screenWidth / 2 - windowWidth / 2, screenHeight / 2 - windowHeight / 2, windowWidth, windowHeight), DrawWindow, "CheeseTools Settings");
+			windowRect = GUILayout.Window(0, new Rect(screenWidth / 2 - windowWidth / 2, screenHeight / 2 - windowHeight / 2, windowWidth, windowHeight), DrawWindow, "CheeseTools Settings");
 		}
 
 		private static void DrawWindow(int windowId) {
 			GUI.changed = false;
+
 			selectedTab = GUILayout.Toolbar(selectedTab, tabNames);
 			switch(selectedTab) {
 				case 0:
@@ -45,6 +65,7 @@ namespace CheeseTools.src {
 			}
 
 			if (GUI.changed) {
+				Locator.GetMenuAudioController()?.PlayButtonFocus();
 				Settings.OnSettingsChanged();
 			}
 		}
