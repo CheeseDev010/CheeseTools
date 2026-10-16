@@ -4,6 +4,7 @@ using System.Reflection;
 using UnityEngine;
 using OWML.Common;
 using OWML.Utils;
+using HarmonyLib;
 
 namespace CheeseTools.src {
 	public static class Settings {
@@ -207,6 +208,23 @@ namespace CheeseTools.src {
 			bool visible = data.markStranger && !Locator.GetDreamWorldController()._insideDream && strangerMarker.GetMarkerDistance() > 1000;
 			if (strangerMarker.IsVisible() != visible) {
 				strangerMarker.SetVisibility(visible);
+			}
+		}
+	}
+
+	[HarmonyPatch]
+	public static class SettingsPatches {
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(SunController), nameof(SunController.Update))]
+		public static bool SunController_Update() {
+			return !Settings.data.freezeSupernova;
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(Menu), nameof(Menu.EnableMenu))]
+		public static void Menu_EnableMenu() {
+			if (Settings.data.originalQuitMenuButtonPosition) {
+				GameObject.Find("Button-ExitToMainMenu")?.transform?.SetSiblingIndex(4);
 			}
 		}
 	}

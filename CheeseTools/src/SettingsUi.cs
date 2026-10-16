@@ -1,4 +1,7 @@
-﻿using UnityEngine;
+﻿using HarmonyLib;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 namespace CheeseTools.src {
@@ -6,7 +9,7 @@ namespace CheeseTools.src {
 		public static bool showWindow;
 		public static bool mouseOverWindow;
 
-		private const float UiScale = 1.5f;
+		private const float UIScale = 1.5f;
 
 		private static string[] tabNames = {"General", "Keybinds", "Practice States", "Custom Practice States"};
 
@@ -18,13 +21,14 @@ namespace CheeseTools.src {
 			if (Keyboard.current[Key.Backquote].wasPressedThisFrame) {
 				showWindow = !showWindow;
 				Locator.GetMenuAudioController().PlayChangeTab();
+				Cursor.lockState = CursorLockMode.None;
+				Cursor.visible = true;
 				if (showWindow) {
-					OWInput.ChangeInputMode(InputMode.None);
 					wasPaused = OWTime.IsPaused();
-					OWTime.Pause(OWTime.PauseType.Menu);
-				} 
-				else {
-					OWInput.RestorePreviousInputs();
+					if (!wasPaused) {
+						OWTime.Pause(OWTime.PauseType.Menu);
+					}
+				} else {
 					if (!wasPaused) {
 						OWTime.Unpause(OWTime.PauseType.Menu);
 					}
@@ -34,12 +38,9 @@ namespace CheeseTools.src {
 
 		public static void OnGUI() {
 			if (!showWindow) return;
-			Cursor.lockState = CursorLockMode.None;
-			Cursor.visible = true;
-
-			GUI.matrix = Matrix4x4.Scale(new Vector3(UiScale, UiScale, 1f));
-			float screenWidth = Screen.width / UiScale;
-			float screenHeight = Screen.height / UiScale;
+			GUI.matrix = Matrix4x4.Scale(new Vector3(UIScale, UIScale, 1f));
+			float screenWidth = Screen.width / UIScale;
+			float screenHeight = Screen.height / UIScale;
 			float windowWidth = screenWidth / 1.5f;
 			float windowHeight = screenHeight / 1.5f;
 			windowRect = GUILayout.Window(0, new Rect(screenWidth / 2 - windowWidth / 2, screenHeight / 2 - windowHeight / 2, windowWidth, windowHeight), DrawWindow, "CheeseTools Settings");
@@ -93,6 +94,42 @@ namespace CheeseTools.src {
 		}
 
 		private static void CustomPracticeStatesTab() {
+		}
+	}
+
+	[HarmonyPatch]
+	public static class SettingsUIPatches {
+		// Following 4 patches are for making sure when the setttings ui is open that no inputs bleed through and affect the game
+		// And also for making sure the cursor is enabled and visible
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(BaseInputManager), nameof(BaseInputManager.GetInputMode))]
+		public static bool BaseInputManager_GetInputMode(ref InputMode __result) {
+			if (SettingsUI.showWindow) {
+				__result = InputMode.None;
+				return false;
+			}
+			return true;
+		}
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(BaseInputManager), nameof(BaseInputManager.IsInputMode))]
+		public static bool BaseInputManager_IsInputMode(ref bool __result) {
+			if (SettingsUI.showWindow) {
+				__result = false;
+				return false;
+			}
+			return true;
+		}
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(EventSystem), nameof(EventSystem.RaycastAll))]
+		public static void EventSystem_RaycastAll(List<RaycastResult> raycastResults) {
+			if (SettingsUI.showWindow) {
+				raycastResults.Clear();
+			}
+		}
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(CursorManager), nameof(CursorManager.RefreshCursorState))]
+		public static bool CursorManager_RefreshCursorState() {
+			return !SettingsUI.showWindow;
 		}
 	}
 }
