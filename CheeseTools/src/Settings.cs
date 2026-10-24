@@ -1,231 +1,245 @@
 ﻿using System;
 using System.IO;
-using System.Reflection;
 using UnityEngine;
 using OWML.Common;
 using OWML.Utils;
 using HarmonyLib;
+using Newtonsoft.Json;
+using System.Reflection;
+using UnityEngine.InputSystem;
 
 namespace CheeseTools.src {
-	public static class Settings {
-		public class Data {
-			public bool watermark = true;
-			public bool infiniteFuel = false;
-			public bool infiniteOxygen = false;
-			public bool playerInvincibility = false;
-			public bool shipInvincibility = false;
-			public bool showLoopTime = false;
-			public bool freezeSupernova = false;
-			public bool createLaunchCodesSave = false;
-			public bool noAltTabPause = false;
-			public bool markStranger = false;
-			public bool learnQuantumFrequency = false;
-			public bool originalQuitMenuButtonPosition = false;
-			public bool showSectors = false;
-		}
+    public static class Settings {
+        public class Data {
+            public bool watermark = true;
+            public bool infiniteFuel = false;
+            public bool infiniteOxygen = false;
+            public bool playerInvincibility = false;
+            public bool shipInvincibility = false;
+            public bool showLoopTime = false;
+            public bool freezeSupernova = false;
+            public bool createLaunchCodesSave = false;
+            public bool noAltTabPause = false;
+            public bool markStranger = false;
+            public bool learnQuantumFrequency = false;
+            public bool originalQuitMenuButtonPosition = false;
+            public bool showSectors = false;
 
-		public static Data data;
+            public Keybind toggleSpacesuitKeybind = new();
+        }
 
-		private const string FileName = "cheesetools-settings.json";
-		private const float AutosaveInterval = 60f;
+        public static Data data;
 
-		private static ScreenPrompt watermark = new ScreenPrompt($"CheeseTools v{CheeseTools.Version}: Enabled");
-		private static ScreenPrompt loopTimeText = new ScreenPrompt("");
+        private const string FileName = "cheesetools-settings.json";
+        private const float AutosaveInterval = 1f;
 
-		private static string path;
-		private static float lastAutosaveTime;
-		private static string lastJson;
+        private static ScreenPrompt watermark = new($"CheeseTools v{CheeseTools.Version}: Enabled");
+        private static ScreenPrompt loopTimeText = new("");
 
-		public static void Start() {
-			string dirPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-			path = Path.Combine(dirPath, FileName);
-			Load();
-		}
+        private static string path;
+        private static float lastAutosaveTime;
+        private static string lastJson;
 
-		public static void OnApplicationQuit() {
-			Save();
-		}
+        public static void Start() {
+            string dirPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            path = Path.Combine(dirPath, FileName);
+            Load();
 
-		public static void Update() {
-			if (Time.unscaledTime - lastAutosaveTime > AutosaveInterval) {
-				lastAutosaveTime = Time.unscaledTime;
-				Save();
-			}
+            data.toggleSpacesuitKeybind.SetDefault(Key.Slash, Key.T);
+        }
 
-			UpdateWatermark();
+        public static void OnApplicationQuit() {
+            Save();
+        }
 
-			if (Locator.GetPlayerBody() == null) return;
+        public static void Update() {
+            if (Time.unscaledTime - lastAutosaveTime > AutosaveInterval) {
+                lastAutosaveTime = Time.unscaledTime;
+                Save();
+           }
 
-			UpdateInfiniteResources();
-			UpdateLoopTimeText();
+            UpdateWatermark();
+            CheckInput();
 
-			if (EntitlementsManager.IsDlcOwned() != EntitlementsManager.AsyncOwnershipStatus.Owned) return;
+            if (Locator.GetPlayerBody() == null) return;
 
-			UpdateStrangerMarker();
-		}
+            UpdateInfiniteResources();
+            UpdateLoopTimeText();
 
-		public static void OnCompleteSceneLoad(OWScene previousScene, OWScene newScene) {
-			if (newScene == OWScene.SolarSystem) {
-				Locator.GetPlayerSectorDetector().OnEnterSector += OnEnterSector;
-				Locator.GetPlayerSectorDetector().OnExitSector += OnExitSector;
+            if (EntitlementsManager.IsDlcOwned() != EntitlementsManager.AsyncOwnershipStatus.Owned) return;
 
-				if (data.learnQuantumFrequency) {
-					PlayerData.LearnFrequency(SignalFrequency.Quantum);
-				}
-			}
-			if (newScene == OWScene.TitleScreen) {
-				if (data.createLaunchCodesSave && (previousScene == OWScene.SolarSystem || previousScene == OWScene.EyeOfTheUniverse)) {
-					PlayerData.ResetGame();
-					PlayerData.LearnLaunchCodes();
-					PlayerData.SaveLoopCount(3);
-				}
-			}
+            UpdateStrangerMarker();
+        }
 
-			if (Locator.GetPlayerBody() == null) return;
-			UpdateInvincibility();
-		}
+        public static void OnCompleteSceneLoad(OWScene previousScene, OWScene newScene) {
+            if (newScene == OWScene.SolarSystem) {
+                Locator.GetPlayerSectorDetector().OnEnterSector += OnEnterSector;
+                Locator.GetPlayerSectorDetector().OnExitSector += OnExitSector;
 
-		public static void OnSettingsChanged() {
-			Application.runInBackground = data.noAltTabPause;
+                if (data.learnQuantumFrequency) {
+                    PlayerData.LearnFrequency(SignalFrequency.Quantum);
+                }
+            }
+            if (newScene == OWScene.TitleScreen) {
+                if (data.createLaunchCodesSave && (previousScene == OWScene.SolarSystem || previousScene == OWScene.EyeOfTheUniverse)) {
+                    PlayerData.ResetGame();
+                    PlayerData.LearnLaunchCodes();
+                    PlayerData.SaveLoopCount(3);
+                }
+            }
 
-			if (data.learnQuantumFrequency) {
-				PlayerData.LearnFrequency(SignalFrequency.Quantum);
-			}
+            if (Locator.GetPlayerBody() == null) return;
+            UpdateInvincibility();
+        }
 
-			if (Locator.GetPlayerBody() == null) return;
+        public static void OnSettingsChanged() {
+            Application.runInBackground = data.noAltTabPause;
 
-			UpdateInvincibility();
-			UpdateSectorText();
-		}
+            if (Locator.GetPlayerBody() == null) return;
 
-		public static void OnEnterSector(Sector sector) {
-			if (data.showSectors) {
-				ModUtils.AddScreenText(sector.gameObject.name, PromptPosition.BottomCenter);
-			}
-		}
+            if (data.learnQuantumFrequency) {
+                PlayerData.LearnFrequency(SignalFrequency.Quantum);
+            }
 
-		public static void OnExitSector(Sector sector) {
-			if (data.showSectors) {
-				ModUtils.RemoveScreenText(sector.gameObject.name, PromptPosition.BottomCenter);
-			}
-		}
+            UpdateInvincibility();
+            UpdateSectorText();
+        }
 
-		private static void Load() {
-			Data loaded = null;
-			try {
-				if (File.Exists(path)) {
-					loaded = JsonUtility.FromJson<Data>(File.ReadAllText(path));
-				}
-			} catch (Exception e) {
-				CheeseTools.Console.WriteLine("Failed to load settings: " + e.Message, MessageType.Error);
-				// TODO: Tell the player in-game that data failed to load
-				try {
-					string corruptPath = Path.Combine(Path.GetDirectoryName(path), Path.GetFileNameWithoutExtension(path) + ".corrupt.json");
-					File.Copy(path, corruptPath, true);
-					File.Delete(path);
-					CheeseTools.Console.WriteLine("Backed up corrupt settings at: " + corruptPath, MessageType.Error); 
-				} catch (Exception ex) {
-					CheeseTools.Console.WriteLine("Failed to backup corrupt settings: " + ex.Message, MessageType.Error);
-				}
-			}
-			data = loaded ?? new Data();
-		}
+        public static void CheckInput() {
+            if (data.toggleSpacesuitKeybind.WasPressedThisFrame()) {
+                CheeseTools.Console.WriteLine("Pressed");
+            }
+        }
 
-		private static void Save() {
-			string json = JsonUtility.ToJson(data, true);
-			if (json == lastJson) return;
-			File.WriteAllText(path, json);
-			lastJson = json;
-			CheeseTools.Console.WriteLine($"[{Time.unscaledTime}] Saved to file", MessageType.Success);
-		}
+        public static void OnEnterSector(Sector sector) {
+            if (data.showSectors) {
+                ModUtils.AddScreenText(sector.gameObject.name, PromptPosition.BottomCenter);
+            }
+        }
 
-		private static void UpdateWatermark() {
-			if (data.watermark) {
-				if (Locator.GetPromptManager()?.GetScreenPromptList(PromptPosition.LowerLeft)?.Contains(watermark) == false) {
-					Locator.GetPromptManager().AddScreenPrompt(watermark, true);
-				}
-			} else {
-				if (Locator.GetPromptManager()?.GetScreenPromptList(PromptPosition.LowerLeft)?.Contains(watermark) == true) {
-					Locator.GetPromptManager().RemoveScreenPrompt(watermark, PromptPosition.LowerLeft);
-				}
-			}
-		}
+        public static void OnExitSector(Sector sector) {
+            if (data.showSectors) {
+                ModUtils.RemoveScreenText(sector.gameObject.name, PromptPosition.BottomCenter);
+            }
+        }
 
-		private static void UpdateInfiniteResources() {
-			if (Locator.GetPlayerTransform()?.TryGetComponent(out PlayerResources resources) == true) {
-				if (data.infiniteFuel)
-					resources.SetValue("_currentFuel", resources.GetValue<float>("_maxFuel"));
-				if (data.infiniteOxygen)
-					resources.SetValue("_currentOxygen", resources.GetValue<float>("_maxOxygen"));
-			}
-		}
+        private static void Load() {
+            Data loaded = null;
+            try {
+                if (File.Exists(path)) {
+                    var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore, ObjectCreationHandling = ObjectCreationHandling.Replace };
+                    loaded = JsonConvert.DeserializeObject<Data>(File.ReadAllText(path), settings);
+                }
+            } catch (Exception e) {
+                CheeseTools.Console.WriteLine("Failed to load settings: " + e.Message, MessageType.Error);
+                // TODO: Tell the player in-game that data failed to load
+                try {
+                    string corruptPath = Path.Combine(Path.GetDirectoryName(path), Path.GetFileNameWithoutExtension(path) + ".corrupt.json");
+                    File.Copy(path, corruptPath, true);
+                    File.Delete(path);
+                    CheeseTools.Console.WriteLine("Backed up corrupt settings at: " + corruptPath, MessageType.Error); 
+                } catch (Exception ex) {
+                    CheeseTools.Console.WriteLine("Failed to backup corrupt settings: " + ex.Message, MessageType.Error);
+                }
+            }
+            data = loaded ?? new Data();
+        }
 
-		private static void UpdateInvincibility() {
-			ShipDamageController damageController = Locator.GetShipTransform()?.GetComponent<ShipDamageController>();
-			if (damageController) {
-				damageController._invincible = data.shipInvincibility;
-				if (data.shipInvincibility) ModUtils.RepairShip();
-			}
+        private static void Save() {
+            string json = JsonConvert.SerializeObject(data, Formatting.Indented);
+            if (json == lastJson) return;
+            File.WriteAllText(path, json);
+            lastJson = json;
+            CheeseTools.Console.WriteLine($"[{Time.unscaledTime}] Saved to file", MessageType.Success);
+        }
 
-			PlayerResources resources = Locator.GetPlayerTransform()?.GetComponent<PlayerResources>();
-			resources._invincible = data.playerInvincibility;
-			if (data.playerInvincibility) {
-				resources._currentHealth = PlayerResources._maxHealth;
-				resources.PatchAllPunctures();
-			}
-		}
+        private static void UpdateWatermark() {
+            if (data.watermark) {
+                if (Locator.GetPromptManager()?.GetScreenPromptList(PromptPosition.LowerLeft)?.Contains(watermark) == false) {
+                    Locator.GetPromptManager().AddScreenPrompt(watermark, true);
+                }
+            } else {
+                if (Locator.GetPromptManager()?.GetScreenPromptList(PromptPosition.LowerLeft)?.Contains(watermark) == true) {
+                    Locator.GetPromptManager().RemoveScreenPrompt(watermark, PromptPosition.LowerLeft);
+                }
+            }
+        }
 
-		private static void UpdateLoopTimeText() {
-			if (data.showLoopTime && TimeLoop.GetSecondsElapsed() > 0f) {
-				loopTimeText.SetText($"Loop Time: {TimeSpan.FromSeconds(TimeLoop.GetSecondsElapsed()).ToString(@"mm\:ss")} [{(int)TimeLoop.GetSecondsElapsed()}]");
-				if (!Locator.GetPromptManager().GetScreenPromptList(PromptPosition.LowerLeft).Contains(loopTimeText)) {
-					Locator.GetPromptManager().AddScreenPrompt(loopTimeText, PromptPosition.LowerLeft, true);
-				}
-			}
-			else {
-				Locator.GetPromptManager().RemoveScreenPrompt(loopTimeText);
-			}
-		}
+        private static void UpdateInfiniteResources() {
+            if (Locator.GetPlayerTransform()?.TryGetComponent(out PlayerResources resources) == true) {
+                if (data.infiniteFuel)
+                    resources.SetValue("_currentFuel", resources.GetValue<float>("_maxFuel"));
+                if (data.infiniteOxygen)
+                    resources.SetValue("_currentOxygen", resources.GetValue<float>("_maxOxygen"));
+            }
+        }
 
-		private static void UpdateSectorText() {
-			if (data.showSectors) {
-				foreach (Sector sector in Locator.GetPlayerSectorDetector()._sectorList) {
-					ModUtils.AddScreenText(sector.gameObject.name, PromptPosition.BottomCenter);
-				}
-			}
-			else {
-				foreach (Sector sector in Locator.GetPlayerSectorDetector()._sectorList) {
-					ModUtils.RemoveScreenText(sector.gameObject.name, PromptPosition.BottomCenter);
-				}
-			}
-		}
-		
-		private static void UpdateStrangerMarker() {
-			var stranger = Locator.GetAstroObject(AstroObject.Name.RingWorld)?.GetOWRigidbody();
-			if (stranger == null) return;
+        private static void UpdateInvincibility() {
+            ShipDamageController damageController = Locator.GetShipTransform()?.GetComponent<ShipDamageController>();
+            if (damageController) {
+                damageController._invincible = data.shipInvincibility;
+                if (data.shipInvincibility) ModUtils.RepairShip();
+            }
 
-			var strangerMarker = ModUtils.SetMarker("THE STRANGER", stranger);
-			bool visible = data.markStranger && !Locator.GetDreamWorldController()._insideDream && strangerMarker.GetMarkerDistance() > 1000;
-			if (strangerMarker.IsVisible() != visible) {
-				strangerMarker.SetVisibility(visible);
-			}
-		}
-	}
+            PlayerResources resources = Locator.GetPlayerTransform()?.GetComponent<PlayerResources>();
+            resources._invincible = data.playerInvincibility;
+            if (data.playerInvincibility) {
+                resources._currentHealth = PlayerResources._maxHealth;
+                resources.PatchAllPunctures();
+            }
+        }
 
-	[HarmonyPatch]
-	public static class SettingsPatches {
-		[HarmonyPrefix]
-		[HarmonyPatch(typeof(SunController), nameof(SunController.Update))]
-		public static bool SunController_Update() {
-			return !Settings.data.freezeSupernova;
-		}
+        private static void UpdateLoopTimeText() {
+            if (data.showLoopTime && TimeLoop.GetSecondsElapsed() > 0f) {
+                loopTimeText.SetText($"Loop Time: {TimeSpan.FromSeconds(TimeLoop.GetSecondsElapsed()).ToString(@"mm\:ss")} [{(int)TimeLoop.GetSecondsElapsed()}]");
+                if (!Locator.GetPromptManager().GetScreenPromptList(PromptPosition.LowerLeft).Contains(loopTimeText)) {
+                    Locator.GetPromptManager().AddScreenPrompt(loopTimeText, PromptPosition.LowerLeft, true);
+                }
+            }
+            else {
+                Locator.GetPromptManager().RemoveScreenPrompt(loopTimeText);
+            }
+        }
 
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(Menu), nameof(Menu.EnableMenu))]
-		public static void Menu_EnableMenu() {
-			if (Settings.data.originalQuitMenuButtonPosition) {
-				GameObject.Find("Button-ExitToMainMenu")?.transform?.SetSiblingIndex(4);
-			}
-		}
-	}
+        private static void UpdateSectorText() {
+            if (data.showSectors) {
+                foreach (Sector sector in Locator.GetPlayerSectorDetector()._sectorList) {
+                    ModUtils.AddScreenText(sector.gameObject.name, PromptPosition.BottomCenter);
+                }
+            }
+            else {
+                foreach (Sector sector in Locator.GetPlayerSectorDetector()._sectorList) {
+                    ModUtils.RemoveScreenText(sector.gameObject.name, PromptPosition.BottomCenter);
+                }
+            }
+        }
+
+        private static void UpdateStrangerMarker() {
+            var stranger = Locator.GetAstroObject(AstroObject.Name.RingWorld)?.GetOWRigidbody();
+            if (stranger == null) return;
+
+            var strangerMarker = ModUtils.SetMarker("THE STRANGER", stranger);
+            bool visible = data.markStranger && !Locator.GetDreamWorldController()._insideDream && strangerMarker.GetMarkerDistance() > 1000;
+            if (strangerMarker.IsVisible() != visible) {
+                strangerMarker.SetVisibility(visible);
+            }
+        }
+    }
+
+    [HarmonyPatch]
+    public static class SettingsPatches {
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(SunController), nameof(SunController.Update))]
+        public static bool SunController_Update() {
+            return !Settings.data.freezeSupernova;
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Menu), nameof(Menu.EnableMenu))]
+        public static void Menu_EnableMenu() {
+            if (Settings.data.originalQuitMenuButtonPosition) {
+                GameObject.Find("Button-ExitToCheeseToolsMenu")?.transform?.SetSiblingIndex(4);
+            }
+        }
+    }
 }
