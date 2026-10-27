@@ -45,7 +45,7 @@ namespace CheeseTools.src {
             path = Path.Combine(dirPath, FileName);
             Load();
 
-            data.toggleSpacesuitKeybind.SetDefault(Key.Slash, Key.T);
+            data.toggleSpacesuitKeybind.SetDefault(Key.Slash, Key.R);
         }
 
         public static void OnApplicationQuit() {
