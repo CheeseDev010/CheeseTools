@@ -4,12 +4,14 @@ using System.Data.SqlClient;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 using UnityEngine.Rendering;
 
 namespace CheeseTools.src {
     public static class SettingsUI {
         public static bool showWindow;
         public static bool mouseOverWindow;
+        public static int selectedTab;
 
         private const float UIScale = 1.5f;
         private const float WindowRatio = 4f / 3f;
@@ -19,7 +21,6 @@ namespace CheeseTools.src {
 
         private static Rect windowRect;
         private static float scale;
-        private static int selectedTab;
         private static bool wasPaused;
 
         private static GUISkin skin;
@@ -126,7 +127,7 @@ namespace CheeseTools.src {
                 float size = 18f;
                 Rect box = new(rect.x, rect.y + (rect.height - size) / 2f, size, size);
                 GUI.DrawTexture(box, frameTexture);
-                Rect inner = new(box.x + 2f, box.y + 2f, size - 4f, size - 4f);
+                Rect inner = new(box.x + 3f, box.y + 3f, size - 6f, size - 6f);
                 GUI.DrawTexture(inner, value ? accentActiveTexture : frameTexture);
             }
             return value;
@@ -137,7 +138,6 @@ namespace CheeseTools.src {
 
             DrawTopbar();
             GUILayout.Space(10);
-            CheeseTools.Console.WriteLine($"unity version: {Application.unityVersion}");
             selectedTab = GUILayout.Toolbar(selectedTab, tabNames, GUI.skin.button, GUI.ToolbarButtonSize.FitToContents, GUILayout.ExpandWidth(false));
             switch(selectedTab) {
                 case 0:
@@ -178,6 +178,7 @@ namespace CheeseTools.src {
 
         private static void KeybindsTab() {
             MakeKeybind("Toggle Spacesuit Keybind: ", Settings.data.toggleSpacesuitKeybind);
+            MakeKeybind("Test Keybind: ", Settings.data.testKeybind);
         }
 
         private static void PracticeStatesTab() {
@@ -189,7 +190,22 @@ namespace CheeseTools.src {
         private static void MakeKeybind(string label, Keybind keybind) {
             GUILayout.BeginHorizontal();
             GUILayout.Label(label);
-            GUILayout.Button("CTRL + R");
+
+            string keybindText = keybind == KeybindsManager.rebinding ? "[...]" :
+                (keybind.IsUnbound() ? "[Click to Bind]" : keybind.GetDisplayName());
+            if (GUILayout.Button(keybindText)) {
+                KeybindsManager.rebinding = keybind == KeybindsManager.rebinding ? null : keybind;
+                KeybindsManager.rebindKeys = new();
+            }
+            if (!keybind.IsUsingDefaultKeys()) {
+                if (GUILayout.Button("Reset To Default")) {
+                    KeybindsManager.rebinding = null;
+                    keybind.SetKeys(keybind.GetDefaultKeys());
+                }
+            }
+            if (KeybindsManager.IsDuplicateKeybind(keybind)) {
+                GUILayout.Label("Duplicate keybinds found, keybind disabled");
+            }
             GUILayout.EndHorizontal();
         }
 
@@ -244,3 +260,4 @@ namespace CheeseTools.src {
         }
     }
 }
+

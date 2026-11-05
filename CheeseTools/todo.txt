@@ -1,0 +1,14 @@
+v2.0.0:
+  - Add a temp disable for keybinds to make them not work when rebinding for example
+  - Re-add all keybind settings
+  - Rethink create launch code save setting
+  - Practice States
+  - Custom Practice States
+    - Share Codes
+    - Groups
+    - Eye Of The Universe support
+    - Dreamworld support
+  - Add disable fog setting
+  - Add disable anglerfish and inhabitants AI setting
+  - Make info tab and new readme
+

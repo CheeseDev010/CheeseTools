@@ -26,6 +26,7 @@ namespace CheeseTools.src {
             public bool showSectors = false;
 
             public Keybind toggleSpacesuitKeybind = new();
+            public Keybind testKeybind = new();
         }
 
         public static Data data;
@@ -33,7 +34,7 @@ namespace CheeseTools.src {
         private const string FileName = "cheesetools-settings.json";
         private const float AutosaveInterval = 1f;
 
-        private static ScreenPrompt watermark = new($"CheeseTools v{CheeseTools.Version}: Enabled");
+        private static ScreenPrompt watermark = new($"CheeseTools v{CheeseTools.Version}: Press {Keyboard.current[Key.Backquote].displayName} for settings");
         private static ScreenPrompt loopTimeText = new("");
 
         private static string path;
@@ -41,11 +42,14 @@ namespace CheeseTools.src {
         private static string lastJson;
 
         public static void Start() {
+            InputSystem.onDeviceChange += OnDeviceChanged;
+
             string dirPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             path = Path.Combine(dirPath, FileName);
             Load();
 
-            data.toggleSpacesuitKeybind.SetDefault(Key.Slash, Key.R);
+            data.toggleSpacesuitKeybind.SetDefaultKeys(Key.Slash, Key.Space);
+            data.testKeybind.SetDefaultKeys(Key.Slash, Key.Digit8);
         }
 
         public static void OnApplicationQuit() {
@@ -107,7 +111,10 @@ namespace CheeseTools.src {
 
         public static void CheckInput() {
             if (data.toggleSpacesuitKeybind.WasPressedThisFrame()) {
-                CheeseTools.Console.WriteLine("Pressed");
+                CheeseTools.Console.WriteLine("Pressed spacesuit toggle");
+            }
+            if (data.testKeybind.WasPressedThisFrame()) {
+                CheeseTools.Console.WriteLine("Pressed test");
             }
         }
 
@@ -121,6 +128,10 @@ namespace CheeseTools.src {
             if (data.showSectors) {
                 ModUtils.RemoveScreenText(sector.gameObject.name, PromptPosition.BottomCenter);
             }
+        }
+
+        public static void OnDeviceChanged(InputDevice device, InputDeviceChange change) {
+            watermark.SetText($"CheeseTools v{CheeseTools.Version}: Press {Keyboard.current[Key.Backquote].displayName} for settings");
         }
 
         private static void Load() {
@@ -243,3 +254,4 @@ namespace CheeseTools.src {
         }
     }
 }
+

@@ -2,6 +2,7 @@
 using OWML.Common;
 using OWML.ModHelper;
 using System.Reflection;
+using UnityEngine.InputSystem;
 
 namespace CheeseTools.src {
     public class CheeseTools : ModBehaviour {
@@ -29,6 +30,7 @@ namespace CheeseTools.src {
         public void Update() {
             Settings.Update();
             SettingsUI.Update();
+            KeybindsManager.Update();
         }
 
         public void OnGUI() {
@@ -38,6 +40,7 @@ namespace CheeseTools.src {
         public void OnApplicationQuit() {
             Settings.OnApplicationQuit();
         }
+
     }
 }
 
