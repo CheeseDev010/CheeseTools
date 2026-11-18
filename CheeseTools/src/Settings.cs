@@ -26,12 +26,19 @@ namespace CheeseTools.src {
             public bool showSectors = false;
 
             public Keybind toggleSpacesuitKeybind = new();
-            public Keybind testKeybind = new();
+            public Keybind fastLoadNewExpeditionKeybind = new();
+            public Keybind teleportShipToPlayerKeybind = new();
+            public Keybind toggleSpeedupKeybind = new();
+            public Keybind enterExitDreamworldKeybind = new();
+            public Keybind giveWarpCoreKeybind = new();
+            public Keybind giveDreamLanternKeybind = new();
+            public Keybind toggleBonkKeybind = new();
         }
 
         public static Data data;
 
         private const string FileName = "cheesetools-settings.json";
+        // TODO: dont forget to set AutosaveInterval to 60f
         private const float AutosaveInterval = 1f;
 
         private static ScreenPrompt watermark = new($"CheeseTools v{CheeseTools.Version}: Press {Keyboard.current[Key.Backquote].displayName} for settings");
@@ -48,8 +55,10 @@ namespace CheeseTools.src {
             path = Path.Combine(dirPath, FileName);
             Load();
 
-            data.toggleSpacesuitKeybind.SetDefaultKeys(Key.Slash, Key.Space);
-            data.testKeybind.SetDefaultKeys(Key.Slash, Key.Digit8);
+            data.toggleSpacesuitKeybind.SetDefaultKeys(Key.Slash, Key.R);
+            data.fastLoadNewExpeditionKeybind.SetDefaultKeys(Key.Slash, Key.T);
+            data.teleportShipToPlayerKeybind.SetDefaultKeys(Key.Slash, Key.Y);
+            data.toggleSpeedupKeybind.SetDefaultKeys(Key.Slash, Key.U);
         }
 
         public static void OnApplicationQuit() {
@@ -111,10 +120,19 @@ namespace CheeseTools.src {
 
         public static void CheckInput() {
             if (data.toggleSpacesuitKeybind.WasPressedThisFrame()) {
-                CheeseTools.Console.WriteLine("Pressed spacesuit toggle");
+                ModUtils.ToggleSpacesuit(false);
             }
-            if (data.testKeybind.WasPressedThisFrame()) {
-                CheeseTools.Console.WriteLine("Pressed test");
+            if (data.fastLoadNewExpeditionKeybind.WasPressedThisFrame()) {
+                ModUtils.LoadSolarSystemScene(null, false);
+            }
+            if (data.teleportShipToPlayerKeybind.WasPressedThisFrame()) {
+                ModUtils.TeleportShipToPlayer();
+            }
+            if (data.toggleSpeedupKeybind.WasPressedThisFrame()) {
+                ModUtils.ToggleSpeedup();
+            }
+            if (data.enterExitDreamworldKeybind.WasPressedThisFrame()) {
+
             }
         }
 

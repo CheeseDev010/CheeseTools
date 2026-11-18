@@ -107,6 +107,7 @@ namespace CheeseTools.src {
             label.stretchWidth = false;
             label.wordWrap = false;
             label.fontSize = FontSize;
+            label.richText = true;
         }
 
         private static void DrawTopbar() {
@@ -178,7 +179,10 @@ namespace CheeseTools.src {
 
         private static void KeybindsTab() {
             MakeKeybind("Toggle Spacesuit Keybind: ", Settings.data.toggleSpacesuitKeybind);
-            MakeKeybind("Test Keybind: ", Settings.data.testKeybind);
+            MakeKeybind("Fast Load New Expedition", Settings.data.fastLoadNewExpeditionKeybind);
+            MakeKeybind("Teleport Ship To Player Keybind: ", Settings.data.teleportShipToPlayerKeybind);
+            MakeKeybind("Toggle Speedup", Settings.data.toggleSpeedupKeybind);
+            MakeKeybind("Enter/Exit Dreamworld", Settings.data.enterExitDreamworldKeybind);
         }
 
         private static void PracticeStatesTab() {
@@ -190,7 +194,6 @@ namespace CheeseTools.src {
         private static void MakeKeybind(string label, Keybind keybind) {
             GUILayout.BeginHorizontal();
             GUILayout.Label(label);
-
             string keybindText = keybind == KeybindsManager.rebinding ? "[...]" :
                 (keybind.IsUnbound() ? "[Click to Bind]" : keybind.GetDisplayName());
             if (GUILayout.Button(keybindText)) {
@@ -201,10 +204,11 @@ namespace CheeseTools.src {
                 if (GUILayout.Button("Reset To Default")) {
                     KeybindsManager.rebinding = null;
                     keybind.SetKeys(keybind.GetDefaultKeys());
+                    Locator.GetMenuAudioController().PlayRebindKey();
                 }
             }
             if (KeybindsManager.IsDuplicateKeybind(keybind)) {
-                GUILayout.Label("Duplicate keybinds found, keybind disabled");
+                GUILayout.Label("<color=yellow>Duplicate keybind (Disabled)</color>");
             }
             GUILayout.EndHorizontal();
         }

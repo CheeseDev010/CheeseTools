@@ -13,7 +13,7 @@ namespace CheeseTools.src {
 
         public void Awake() {
             instance = this;
-            Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly());
+            new Harmony("CheeseRunner1.CheeseTools").PatchAll(Assembly.GetExecutingAssembly());
         }
 
         public void Start() {
@@ -25,6 +25,7 @@ namespace CheeseTools.src {
 
         public void OnCompleteSceneLoad(OWScene previousScene, OWScene newScene) {
             Settings.OnCompleteSceneLoad(previousScene, newScene);
+            ModUtils.OnCompleteSceneLoad(previousScene, newScene);
         }
 
         public void Update() {

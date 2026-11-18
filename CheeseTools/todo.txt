@@ -1,8 +1,8 @@
 v2.0.0:
-  - Add a temp disable for keybinds to make them not work when rebinding for example
   - Re-add all keybind settings
   - Rethink create launch code save setting
   - Practice States
+    - Add sand column to atp interior practice state
   - Custom Practice States
     - Share Codes
     - Groups
