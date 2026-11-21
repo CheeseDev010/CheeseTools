@@ -7,6 +7,7 @@ using HarmonyLib;
 using Newtonsoft.Json;
 using System.Reflection;
 using UnityEngine.InputSystem;
+using CheeseTools.src.Utils;
 
 namespace CheeseTools.src {
     public static class Settings {
@@ -24,6 +25,7 @@ namespace CheeseTools.src {
             public bool learnQuantumFrequency = false;
             public bool originalQuitMenuButtonPosition = false;
             public bool showSectors = false;
+            public DreamWorldUtil.DreamCampfireType dreamCampfireType = DreamWorldUtil.DreamCampfireType.RiverLowlands;
 
             public Keybind toggleSpacesuitKeybind = new();
             public Keybind fastLoadNewExpeditionKeybind = new();
@@ -59,6 +61,7 @@ namespace CheeseTools.src {
             data.fastLoadNewExpeditionKeybind.SetDefaultKeys(Key.Slash, Key.T);
             data.teleportShipToPlayerKeybind.SetDefaultKeys(Key.Slash, Key.Y);
             data.toggleSpeedupKeybind.SetDefaultKeys(Key.Slash, Key.U);
+            data.enterExitDreamworldKeybind.SetDefaultKeys(Key.Slash, Key.I);
         }
 
         public static void OnApplicationQuit() {
@@ -120,31 +123,35 @@ namespace CheeseTools.src {
 
         public static void CheckInput() {
             if (data.toggleSpacesuitKeybind.WasPressedThisFrame()) {
-                ModUtils.ToggleSpacesuit(false);
+                PlayerUtil.ToggleSpacesuit(false);
             }
             if (data.fastLoadNewExpeditionKeybind.WasPressedThisFrame()) {
-                ModUtils.LoadSolarSystemScene(null, false);
+                SceneLoadUtil.LoadSolarSystemScene(null, false);
             }
             if (data.teleportShipToPlayerKeybind.WasPressedThisFrame()) {
-                ModUtils.TeleportShipToPlayer();
+                TeleportationUtil.TeleportShipToPlayer();
             }
             if (data.toggleSpeedupKeybind.WasPressedThisFrame()) {
-                ModUtils.ToggleSpeedup();
+                MiscUtil.ToggleSpeedup();
             }
-            if (data.enterExitDreamworldKeybind.WasPressedThisFrame()) {
-
-            }
+            // if (data.enterExitDreamworldKeybind.WasPressedThisFrame()) {
+            //     if (Locator.GetDreamWorldController()._insideDream) {
+            //         DreamWorldUtil.EnterDreamWorld();
+            //     } else {
+            //         DreamWorldUtil.ExitDreamWorld();
+            //     }
+            // }
         }
 
         public static void OnEnterSector(Sector sector) {
             if (data.showSectors) {
-                ModUtils.AddScreenText(sector.gameObject.name, PromptPosition.BottomCenter);
+                MiscUtil.AddScreenText(sector.gameObject.name, PromptPosition.BottomCenter);
             }
         }
 
         public static void OnExitSector(Sector sector) {
             if (data.showSectors) {
-                ModUtils.RemoveScreenText(sector.gameObject.name, PromptPosition.BottomCenter);
+                MiscUtil.RemoveScreenText(sector.gameObject.name, PromptPosition.BottomCenter);
             }
         }
 
@@ -207,7 +214,7 @@ namespace CheeseTools.src {
             ShipDamageController damageController = Locator.GetShipTransform()?.GetComponent<ShipDamageController>();
             if (damageController) {
                 damageController._invincible = data.shipInvincibility;
-                if (data.shipInvincibility) ModUtils.RepairShip();
+                if (data.shipInvincibility) MiscUtil.RepairShip();
             }
 
             PlayerResources resources = Locator.GetPlayerTransform()?.GetComponent<PlayerResources>();
@@ -233,12 +240,12 @@ namespace CheeseTools.src {
         private static void UpdateSectorText() {
             if (data.showSectors) {
                 foreach (Sector sector in Locator.GetPlayerSectorDetector()._sectorList) {
-                    ModUtils.AddScreenText(sector.gameObject.name, PromptPosition.BottomCenter);
+                    MiscUtil.AddScreenText(sector.gameObject.name, PromptPosition.BottomCenter);
                 }
             }
             else {
                 foreach (Sector sector in Locator.GetPlayerSectorDetector()._sectorList) {
-                    ModUtils.RemoveScreenText(sector.gameObject.name, PromptPosition.BottomCenter);
+                    MiscUtil.RemoveScreenText(sector.gameObject.name, PromptPosition.BottomCenter);
                 }
             }
         }
@@ -247,7 +254,7 @@ namespace CheeseTools.src {
             var stranger = Locator.GetAstroObject(AstroObject.Name.RingWorld)?.GetOWRigidbody();
             if (stranger == null) return;
 
-            var strangerMarker = ModUtils.SetMarker("THE STRANGER", stranger);
+            var strangerMarker = MiscUtil.SetMarker("THE STRANGER", stranger);
             bool visible = data.markStranger && !Locator.GetDreamWorldController()._insideDream && strangerMarker.GetMarkerDistance() > 1000;
             if (strangerMarker.IsVisible() != visible) {
                 strangerMarker.SetVisibility(visible);

@@ -1,4 +1,5 @@
-﻿using HarmonyLib;
+﻿using CheeseTools.src.Utils;
+using HarmonyLib;
 using OWML.Common;
 using OWML.ModHelper;
 using System.Reflection;
@@ -19,19 +20,20 @@ namespace CheeseTools.src {
         public void Start() {
             LoadManager.OnCompleteSceneLoad += (prev, next) => ModHelper.Events.Unity.FireOnNextUpdate(() => OnCompleteSceneLoad(prev, next));
 
+            KeyInput.Start();
             Settings.Start();
             Console.WriteLine($"CheeseTools v{Version} enabled!", MessageType.Success);
         }
 
         public void OnCompleteSceneLoad(OWScene previousScene, OWScene newScene) {
             Settings.OnCompleteSceneLoad(previousScene, newScene);
-            ModUtils.OnCompleteSceneLoad(previousScene, newScene);
+            SceneLoadUtil.OnCompleteSceneLoad(previousScene, newScene);
         }
 
         public void Update() {
+            KeybindsManager.Update();
             Settings.Update();
             SettingsUI.Update();
-            KeybindsManager.Update();
         }
 
         public void OnGUI() {

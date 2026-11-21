@@ -13,17 +13,22 @@ namespace CheeseTools.src {
         public static bool mouseOverWindow;
         public static int selectedTab;
 
-        private const float UIScale = 1.5f;
+        private const float UIScale = 1.4f;
         private const float WindowRatio = 4f / 3f;
         private const int FontSize = 16;
 
         private static string[] tabNames = {"General", "Keybinds", "Practice States", "Custom Practice States", "Info"};
+        private static string[] dreamCampfireNames = {"River Lowlands", "Cinder Isles", "Hidden Gorge", "Reservoir"};
 
         private static Rect windowRect;
         private static float scale;
         private static bool wasPaused;
+        private static bool popupSelectorEnabled;
+        private static Rect popupSelectorRect;
+        private static float popupSelectorScroll;
 
         private static GUISkin skin;
+        private static GUIStyle popupSelectorButtonStyle;
         private static Texture2D windowTexture = Solid(new Color(0.06f, 0.06f, 0.06f, 0.94f));
         private static Texture2D frameTexture = Solid(new Color(0.22f, 0.18f,0.18f, 1f));
         private static Texture2D accentTexture = Solid(new Color(0.98f, 0.59f, 0.26f, 0.40f));
@@ -31,7 +36,7 @@ namespace CheeseTools.src {
         private static Texture2D accentActiveTexture = Solid(new Color(0.98f, 0.53f, 0.06f, 1.00f));
 
         public static void Update() {
-            if (Keyboard.current[Key.Backquote].wasPressedThisFrame) {
+            if (KeyInput.WasPressedThisFrame(Key.Backquote)) {
                 showWindow = !showWindow;
                 Locator.GetMenuAudioController().PlayChangeTab();
                 Cursor.lockState = CursorLockMode.None;
@@ -49,6 +54,10 @@ namespace CheeseTools.src {
                     }
                 }
             }
+
+            if (popupSelectorEnabled && Mouse.current.leftButton.wasPressedThisFrame) {
+                popupSelectorEnabled = false;
+            }
         }
 
         public static void OnGUI() {
@@ -64,7 +73,11 @@ namespace CheeseTools.src {
             float windowHeight = screenHeight / 1.5f;
             float windowWidth = windowHeight * WindowRatio;
             windowRect = new Rect(screenWidth / 2f - windowWidth / 2f, screenHeight / 2f - windowHeight / 2f, windowWidth, windowHeight);
-            windowRect = GUI.Window(0, windowRect, DrawWindow, "");
+            windowRect = GUI.Window(0, windowRect, SettingsWindow, "");
+
+            if (popupSelectorEnabled) {
+                GUI.Window(1, popupSelectorRect, PopupSelectorWindow, "");
+            }
         }
 
         private static Texture2D Solid(Color color) {
@@ -108,6 +121,14 @@ namespace CheeseTools.src {
             label.wordWrap = false;
             label.fontSize = FontSize;
             label.richText = true;
+
+            popupSelectorButtonStyle = new(button);
+            popupSelectorButtonStyle.normal.background = frameTexture;
+            popupSelectorButtonStyle.hover.background = accentTexture;
+            popupSelectorButtonStyle.active.background = frameTexture;
+            popupSelectorButtonStyle.onNormal.background = frameTexture;
+            popupSelectorButtonStyle.onHover.background = frameTexture;
+            popupSelectorButtonStyle.onActive.background = frameTexture;
         }
 
         private static void DrawTopbar() {
@@ -134,7 +155,7 @@ namespace CheeseTools.src {
             return value;
         }
 
-        private static void DrawWindow(int windowId) {
+        private static void SettingsWindow(int windowId) {
             GUI.changed = false;
 
             DrawTopbar();
@@ -178,11 +199,12 @@ namespace CheeseTools.src {
         }
 
         private static void KeybindsTab() {
-            MakeKeybind("Toggle Spacesuit Keybind: ", Settings.data.toggleSpacesuitKeybind);
-            MakeKeybind("Fast Load New Expedition", Settings.data.fastLoadNewExpeditionKeybind);
-            MakeKeybind("Teleport Ship To Player Keybind: ", Settings.data.teleportShipToPlayerKeybind);
-            MakeKeybind("Toggle Speedup", Settings.data.toggleSpeedupKeybind);
-            MakeKeybind("Enter/Exit Dreamworld", Settings.data.enterExitDreamworldKeybind);
+            KeybindUI("Toggle Spacesuit Keybind: ", Settings.data.toggleSpacesuitKeybind);
+            KeybindUI("Fast Load New Expedition", Settings.data.fastLoadNewExpeditionKeybind);
+            KeybindUI("Teleport Ship To Player Keybind: ", Settings.data.teleportShipToPlayerKeybind);
+            KeybindUI("Toggle Speedup", Settings.data.toggleSpeedupKeybind);
+            KeybindUI("Enter/Exit Dreamworld", Settings.data.enterExitDreamworldKeybind);
+            PopupSelectorUI((int)Settings.data.dreamCampfireType, dreamCampfireNames);
         }
 
         private static void PracticeStatesTab() {
@@ -191,7 +213,7 @@ namespace CheeseTools.src {
         private static void CustomPracticeStatesTab() {
         }
 
-        private static void MakeKeybind(string label, Keybind keybind) {
+        private static void KeybindUI(string label, Keybind keybind) {
             GUILayout.BeginHorizontal();
             GUILayout.Label(label);
             string keybindText = keybind == KeybindsManager.rebinding ? "[...]" :
@@ -211,6 +233,31 @@ namespace CheeseTools.src {
                 GUILayout.Label("<color=yellow>Duplicate keybind (Disabled)</color>");
             }
             GUILayout.EndHorizontal();
+        }
+
+        private static void PopupSelectorUI(int selectedIndex, string[] options) {
+            string label = options[selectedIndex];
+            Rect rect = GUILayoutUtility.GetRect(new GUIContent(label), GUI.skin.button);
+            if (GUI.Button(rect, label)) {
+                Vector2 pos = GUIUtility.GUIToScreenPoint(new Vector2(Unscale(rect.x), Unscale(rect.yMax)));
+                popupSelectorRect = new Rect(pos.x, pos.y, rect.width, rect.height * options.Length);
+                popupSelectorScroll = 0f;
+                popupSelectorEnabled = true;
+            }
+        }
+
+        private static void PopupSelectorWindow(int windowId) {
+            GUILayout.Label("1");
+            GUILayout.Label("2");
+            GUILayout.Label("3");
+            GUILayout.Label("4");
+            GUILayout.Label("5");
+            GUILayout.Label("6");
+            GUILayout.Label("7");
+            GUILayout.Label("8");
+            GUILayout.Label("9");
+            GUILayout.Label("0");
+            popupSelectorScroll = GUI.VerticalScrollbar(new Rect(25, 25, 100, 30), popupSelectorScroll, 1f, 0f, 10f);
         }
 
         private static float Scale(float num) {

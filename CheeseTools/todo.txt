@@ -1,5 +1,6 @@
 v2.0.0:
   - Re-add all keybind settings
+  - Fix player roll bug
   - Rethink create launch code save setting
   - Practice States
     - Add sand column to atp interior practice state
