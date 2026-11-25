@@ -33,11 +33,11 @@ namespace CheeseTools.src {
         public void Update() {
             KeybindsManager.Update();
             Settings.Update();
-            SettingsUI.Update();
+            SettingsGUI.Update();
         }
 
         public void OnGUI() {
-            SettingsUI.OnGUI();
+            SettingsGUI.OnGUI();
         }
 
         public void OnApplicationQuit() {

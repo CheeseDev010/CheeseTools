@@ -135,7 +135,7 @@ namespace CheeseTools.src {
         private static void UpdateRebinding() {
             if (rebinding == null) return;
             
-            if (!SettingsUI.showWindow || SettingsUI.selectedTab != 1 || KeyInput.WasPressedThisFrame(Key.Escape)) {
+            if (!SettingsGUI.showWindow || SettingsGUI.selectedTab != 1 || KeyInput.WasPressedThisFrame(Key.Escape)) {
                 rebinding = null;
                 return;
             }

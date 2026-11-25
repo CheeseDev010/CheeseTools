@@ -2,7 +2,7 @@
 using UnityEngine;
 
 namespace CheeseTools.src {
-    public static class MiscUtil {
+    public static class GeneralUtil {
         private const float SpeedupTimeScale = 51f;
 
         public static void ToggleSpeedup() {
