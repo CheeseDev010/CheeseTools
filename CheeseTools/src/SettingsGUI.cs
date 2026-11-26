@@ -11,13 +11,11 @@ using UnityEngine.Rendering;
 
 namespace CheeseTools.src {
     public static class SettingsGUI {
-        private struct PopupSelectorData {
+        private class PopupSelectorData {
+            public string id;
             public string[] options;
             public Rect rect;
-            public bool enabled;
             public int selectedIndex = -1;
-
-            public PopupSelectorData() {}
         }
 
         public static bool showWindow;
@@ -34,7 +32,7 @@ namespace CheeseTools.src {
         private static Rect windowRect;
         private static float scale;
         private static bool wasPaused;
-        private static PopupSelectorData popupSelectorData = new();
+        private static PopupSelectorData popupSelectorData;
 
         public static void Update() {
             if (KeyInput.WasPressedThisFrame(Key.Backquote)) {
@@ -56,8 +54,8 @@ namespace CheeseTools.src {
                 }
             }
 
-            if (popupSelectorData.enabled && Mouse.current.leftButton.wasReleasedThisFrame) {
-                popupSelectorData.enabled = false;
+            if (popupSelectorData != null && Mouse.current.leftButton.wasReleasedThisFrame) {
+                popupSelectorData = null;
             }
         }
 
@@ -76,7 +74,7 @@ namespace CheeseTools.src {
             windowRect = new Rect(screenWidth / 2f - windowWidth / 2f, screenHeight / 2f - windowHeight / 2f, windowWidth, windowHeight);
             windowRect = GUI.Window(0, windowRect, SettingsWindow, "");
 
-            if (popupSelectorData.enabled) {
+            if (popupSelectorData != null) {
                 GUI.Window(1, popupSelectorData.rect, PopupSelectorWindow, "", SettingsGUISkin.popupSelectorWindowStyle);
             }
         }
@@ -153,7 +151,7 @@ namespace CheeseTools.src {
             DrawKeybind("Teleport Ship To Player Keybind: ", Settings.data.teleportShipToPlayerKeybind);
             DrawKeybind("Toggle Speedup", Settings.data.toggleSpeedupKeybind);
             DrawKeybind("Enter/Exit Dreamworld", Settings.data.enterExitDreamworldKeybind);
-            Settings.data.dreamCampfireType = (DreamWorldUtil.DreamCampfireType) DrawPopupSelector((int)Settings.data.dreamCampfireType, dreamCampfireNames);
+            Settings.data.dreamCampfireType = (DreamWorldUtil.DreamCampfireType) DrawPopupSelector("Dreamworld Campfire: ", (int)Settings.data.dreamCampfireType, dreamCampfireNames);
         }
 
         private static void PracticeStatesTab() {
@@ -184,7 +182,7 @@ namespace CheeseTools.src {
             GUILayout.EndHorizontal();
         }
 
-        private static int DrawPopupSelector(int selectedIndex, string[] options) {
+        private static int DrawPopupSelector(string label, int selectedIndex, string[] options) {
             string longest = "";
             foreach (string str in options) {
                 if (str.Length > longest.Length) {
@@ -192,17 +190,20 @@ namespace CheeseTools.src {
                 }
             }
             longest += " ▼";
-            string label = options[selectedIndex] + " ▼";
+            string buttonText = options[selectedIndex] + " ▼";
 
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("");
             Rect rect = GUILayoutUtility.GetRect(new GUIContent(longest), GUI.skin.button);
-            if (GUI.Button(rect, label)) {
+            if (GUI.Button(rect, buttonText)) {
+                Locator.GetMenuAudioController()?.PlayButtonFocus();
                 Vector2 pos = GUIUtility.GUIToScreenPoint(new Vector2(Unscale(rect.x), Unscale(rect.yMax)));
+                popupSelectorData = new();
                 popupSelectorData.rect = new Rect(pos.x, pos.y, rect.width, rect.height * options.Length);
                 popupSelectorData.options = options;
                 popupSelectorData.selectedIndex = -1;
-                CheeseTools.instance.ModHelper.Events.Unity.FireOnNextUpdate(() => popupSelectorData.enabled = true);
             }
-            // TODO: not gonna work with multiple popupselectors
+            GUILayout.EndHorizontal();
             return popupSelectorData.selectedIndex != -1 ? popupSelectorData.selectedIndex : selectedIndex;
         }
 
