@@ -12,10 +12,11 @@ using UnityEngine.Rendering;
 namespace CheeseTools.src {
     public static class SettingsGUI {
         private class PopupSelectorData {
-            public string id;
             public string[] options;
+            public string id;
             public Rect rect;
             public int selectedIndex = -1;
+            public int createdFrameCount;
         }
 
         public static bool showWindow;
@@ -26,6 +27,7 @@ namespace CheeseTools.src {
         private const float UIScale = 1.4f;
         private const float WindowRatio = 4f / 3f;
 
+        // TODO: Add tab enums
         private static string[] tabNames = {"General", "Keybinds", "Practice States", "Custom Practice States", "Info"};
         private static string[] dreamCampfireNames = {"River Lowlands", "Cinder Isles", "Hidden Gorge", "Reservoir"};
 
@@ -54,8 +56,8 @@ namespace CheeseTools.src {
                 }
             }
 
-            if (popupSelectorData != null && Mouse.current.leftButton.wasReleasedThisFrame) {
-                popupSelectorData = null;
+            if (popupSelectorData != null && popupSelectorData.createdFrameCount != Time.frameCount && (Mouse.current.leftButton.wasReleasedThisFrame || !showWindow)) {
+                CheeseTools.instance.ModHelper.Events.Unity.FireOnNextUpdate(() => popupSelectorData = null);
             }
         }
 
@@ -72,13 +74,13 @@ namespace CheeseTools.src {
             float windowHeight = screenHeight / 1.5f;
             float windowWidth = windowHeight * WindowRatio;
             windowRect = new Rect(screenWidth / 2f - windowWidth / 2f, screenHeight / 2f - windowHeight / 2f, windowWidth, windowHeight);
-            windowRect = GUI.Window(0, windowRect, SettingsWindow, "");
+            windowRect = GUI.Window(1000, windowRect, SettingsWindow, "");
 
             if (popupSelectorData != null) {
-                GUI.Window(1, popupSelectorData.rect, PopupSelectorWindow, "", SettingsGUISkin.popupSelectorWindowStyle);
+                GUI.Window(1001, popupSelectorData.rect, PopupSelectorWindow, "", SettingsGUISkin.popupSelectorWindowStyle);
+                GUI.BringWindowToFront(1001);
             }
         }
-
 
         private static void DrawTopbar() {
             if (Event.current.type == EventType.Repaint) {
@@ -145,13 +147,15 @@ namespace CheeseTools.src {
             Settings.data.showSectors = Toggle(Settings.data.showSectors, "Show Sectors");
         }
 
+        private static DreamWorldUtil.DreamCampfireType test;
         private static void KeybindsTab() {
             DrawKeybind("Toggle Spacesuit Keybind: ", Settings.data.toggleSpacesuitKeybind);
-            DrawKeybind("Fast Load New Expedition", Settings.data.fastLoadNewExpeditionKeybind);
+            DrawKeybind("Fast Load New Expedition: ", Settings.data.fastLoadNewExpeditionKeybind);
             DrawKeybind("Teleport Ship To Player Keybind: ", Settings.data.teleportShipToPlayerKeybind);
-            DrawKeybind("Toggle Speedup", Settings.data.toggleSpeedupKeybind);
-            DrawKeybind("Enter/Exit Dreamworld", Settings.data.enterExitDreamworldKeybind);
+            DrawKeybind("Toggle Speedup: ", Settings.data.toggleSpeedupKeybind);
+            DrawKeybind("Enter/Exit Dreamworld: ", Settings.data.enterExitDreamworldKeybind);
             Settings.data.dreamCampfireType = (DreamWorldUtil.DreamCampfireType) DrawPopupSelector("Dreamworld Campfire: ", (int)Settings.data.dreamCampfireType, dreamCampfireNames);
+            test = (DreamWorldUtil.DreamCampfireType) DrawPopupSelector("Second Dreamworld Campfire: ", (int)test, dreamCampfireNames);
         }
 
         private static void PracticeStatesTab() {
@@ -193,26 +197,36 @@ namespace CheeseTools.src {
             string buttonText = options[selectedIndex] + " ▼";
 
             GUILayout.BeginHorizontal();
-            GUILayout.Label("");
+            GUILayout.Label(label);
             Rect rect = GUILayoutUtility.GetRect(new GUIContent(longest), GUI.skin.button);
             if (GUI.Button(rect, buttonText)) {
-                Locator.GetMenuAudioController()?.PlayButtonFocus();
                 Vector2 pos = GUIUtility.GUIToScreenPoint(new Vector2(Unscale(rect.x), Unscale(rect.yMax)));
                 popupSelectorData = new();
+                popupSelectorData.id = label;
                 popupSelectorData.rect = new Rect(pos.x, pos.y, rect.width, rect.height * options.Length);
                 popupSelectorData.options = options;
                 popupSelectorData.selectedIndex = -1;
+                popupSelectorData.createdFrameCount = Time.frameCount;
             }
             GUILayout.EndHorizontal();
-            return popupSelectorData.selectedIndex != -1 ? popupSelectorData.selectedIndex : selectedIndex;
+
+            if (popupSelectorData != null && popupSelectorData.id == label && popupSelectorData.selectedIndex != -1) {
+                int selected = popupSelectorData.selectedIndex;
+                popupSelectorData = null;
+                return selected;
+            }
+            return selectedIndex;
         }
 
         private static void PopupSelectorWindow(int windowId) {
+            if (popupSelectorData == null) return;
+
             for (int i = 0; i < popupSelectorData.options.Length; i++) {
                 string option = popupSelectorData.options[i];
                 float optionHeight = popupSelectorData.rect.height / popupSelectorData.options.Length;
                 Rect rect = new(0, optionHeight * i, popupSelectorData.rect.width, optionHeight);
                 if (GUI.Button(rect, option, SettingsGUISkin.popupSelectorOptionStyle)) {
+                    Locator.GetMenuAudioController()?.PlayButtonFocus();
                     popupSelectorData.selectedIndex = i;
                 }
             }
